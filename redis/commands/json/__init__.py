@@ -139,9 +139,40 @@ class JSON(JSONCommands):
         return p
 
 
+class AsyncJSON(JSON, JSONCommands):
+    def pipeline(self, transaction=True, shard_hint=None):
+        """Creates a pipeline for the JSON module, that can be used for executing
+        JSON commands, as well as classic core commands.
+        """
+        if isinstance(self.client, redis.asyncio.RedisCluster):
+            p = AsyncClusterPipeline(
+                client=self.client
+            )
+
+        else:
+            p = AsyncPipeline(
+                connection_pool=self.client.connection_pool,
+                response_callbacks=self._MODULE_CALLBACKS,
+                transaction=transaction,
+                shard_hint=shard_hint,
+            )
+
+        p._encode = self._encode
+        p._decode = self._decode
+        return p
+
+
 class ClusterPipeline(JSONCommands, redis.cluster.ClusterPipeline):
     """Cluster pipeline for the module."""
 
 
 class Pipeline(JSONCommands, redis.client.Pipeline):
+    """Pipeline for the module."""
+
+
+class AsyncClusterPipeline(JSONCommands, redis.asyncio.cluster.ClusterPipeline):
+    """Cluster pipeline for the module."""
+
+
+class AsyncPipeline(JSONCommands, redis.asyncio.client.Pipeline):
     """Pipeline for the module."""
